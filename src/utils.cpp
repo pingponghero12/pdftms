@@ -1,6 +1,10 @@
 #include "utils.hpp"
 
 #include <algorithm>
+#include <memory>
+#include <array>
+#include <optional>
+#include <unistd.h>
 
 std::string expand_tilde(const std::string& path) {
     if (!path.empty() && path[0] == '~') {
@@ -19,3 +23,27 @@ std::string rtrim(const std::string& s) {
     }).base(), result.end());
     return result;
 }
+
+std::optional<std::string> fzf() {
+    std::array<char, 256> buffer;
+    std::string output;
+
+    // Custom deleter to avoid attribute ignore warnings
+    auto close_file = [](FILE* file) {
+        if (file) pclose(file);
+    };
+    std::unique_ptr<FILE, decltype(close_file)> pipe(popen("fzf", "r"), close_file);
+
+    if(!pipe) {
+        throw std::runtime_error("popen() failed");
+    }
+    while (fgets(buffer.data(), static_cast<int>(buffer.size()), pipe.get()) != nullptr) {
+        output += buffer.data();
+    }
+
+    if (output == "") {
+        return {};
+    }
+    return output;
+}
+

@@ -1,9 +1,7 @@
 #include <iostream>
 #include <string>
 #include <unistd.h>
-#include <memory>
 #include <optional>
-#include <array>
 #include <filesystem>
 
 #include "config.hpp"
@@ -12,42 +10,17 @@
 // #define CONFIG_PATH "~/.config/pdftms.config"
 #define CONFIG_PATH "~/Documents/pdftms/config.yaml"
 
-// IO () -> IO (Maybe String)
-std::optional<std::string> fzf() {
-    std::array<char, 256> buffer;
-    std::string output;
-
-    // Custom deleter to avoid attribute ignore warnings
-    auto close_file = [](FILE* file) {
-        if (file) pclose(file);
-    };
-    std::unique_ptr<FILE, decltype(close_file)> pipe(popen("fzf", "r"), close_file);
-
-    if(!pipe) {
-        throw std::runtime_error("popen() failed");
-    }
-    while (fgets(buffer.data(), static_cast<int>(buffer.size()), pipe.get()) != nullptr) {
-        output += buffer.data();
-    }
-
-    if (output == "") {
-        return {};
-    }
-    return output;
-}
-
 int main(void) {
     // Filesystem and YAML need expanded tilde
     std::string config_path = expand_tilde(CONFIG_PATH);
     Config config = read_config(config_path);
-    config.base_dir_path = expand_tilde(config.base_dir_path);
 
-    const auto base_path = std::filesystem::path{config.base_dir_path};
+    const auto base_path = std::filesystem::path{expand_tilde(config.base_dir_path)};
     try {
         std::filesystem::current_path(base_path);
     }
-    catch (std::filesystem::filesystem_error& Error) {
-        std::cerr << "filesystem error" << std::endl;
+    catch (std::filesystem::filesystem_error& error) {
+        std::cerr << "filesystem error: " << error.what() << std::endl;
         return 0;
     }
 
@@ -56,7 +29,9 @@ int main(void) {
         return 0;
     }
 
-    auto pdfv = config.pdf_viewer.c_str();
-    execlp(pdfv, pdfv, rtrim(file.value()).c_str(), NULL);
-    return 0;
+    auto pdf_viewer = config.pdf_viewer.c_str();
+    execlp(pdf_viewer, pdf_viewer, rtrim(file.value()).c_str(), NULL);
+
+    std::cerr << "Failed to exec " << pdf_viewer << std::endl;
+    return EXIT_FAILURE;
 }

@@ -16,5 +16,7 @@ namespace YAML {
     };
 }
 
+// Config -> IO ()
 void create_config(const Config& config);
+// String -> IO (Config)
 Config read_config(const std::string& config_path);
