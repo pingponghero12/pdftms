@@ -7,7 +7,17 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENTIONS OFF)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wpedantic")
 
-add_executable(pdftms "src/main.cpp")
+include_directories(include)
+
+find_package(yaml-cpp REQUIRED)
+
+file(GLOB SOURCE "src/*.cpp")
+
+add_executable(pdftms ${SOURCE})
+
+target_link_libraries(${PROJECT_NAME} 
+    PRIVATE
+    yaml-cpp
+)
