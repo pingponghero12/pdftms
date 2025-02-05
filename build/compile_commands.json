@@ -1,8 +1,0 @@
-[
-{
-  "directory": "/home/pnrh1/Documents/pdftms/build",
-  "command": "g++   -Wall -Wextra -Wpedantic -std=gnu++23 -o CMakeFiles/pdftms.dir/src/main.cpp.o -c /home/pnrh1/Documents/pdftms/src/main.cpp",
-  "file": "/home/pnrh1/Documents/pdftms/src/main.cpp",
-  "output": "CMakeFiles/pdftms.dir/src/main.cpp.o"
-}
-]

@@ -1,3 +1,0 @@
-/home/pnrh1/Documents/pdftms/build/CMakeFiles/pdftms.dir
-/home/pnrh1/Documents/pdftms/build/CMakeFiles/edit_cache.dir
-/home/pnrh1/Documents/pdftms/build/CMakeFiles/rebuild_cache.dir
