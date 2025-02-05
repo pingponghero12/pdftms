@@ -1,0 +1,1 @@
+g++ -Wall -Wextra -Wpedantic CMakeFiles/pdftms.dir/src/main.cpp.o -o pdftms

@@ -1,2 +1,2 @@
-# pdfms
+# pdftms
 PDF TUI Managment System
