@@ -1,18 +1,15 @@
 #include <iostream>
-#include <stdio.h>
 #include <string>
-#include <stdlib.h>
 #include <unistd.h>
 #include <memory>
 #include <optional>
 #include <array>
 #include <filesystem>
-#include <unistd.h>
 
 #include "config.hpp"
 #include "utils.hpp"
 
-//#define CONFIG_PATH "~/.config/pdftms.config"
+// #define CONFIG_PATH "~/.config/pdftms.config"
 #define CONFIG_PATH "~/Documents/pdftms/config.yaml"
 
 // IO () -> IO (Maybe String)
@@ -20,7 +17,11 @@ std::optional<std::string> fzf() {
     std::array<char, 256> buffer;
     std::string output;
 
-    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen("fzf", "r"), pclose);
+    // Custom deleter to avoid attribute ignore warnings
+    auto close_file = [](FILE* file) {
+        if (file) pclose(file);
+    };
+    std::unique_ptr<FILE, decltype(close_file)> pipe(popen("fzf", "r"), close_file);
 
     if(!pipe) {
         throw std::runtime_error("popen() failed");
