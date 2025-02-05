@@ -2,7 +2,6 @@
 #include <string>
 #include <unistd.h>
 #include <optional>
-#include <filesystem>
 
 #include "config.hpp"
 #include "utils.hpp"
@@ -15,18 +14,13 @@ int main(void) {
     std::string config_path = expand_tilde(CONFIG_PATH);
     Config config = read_config(config_path);
 
-    const auto base_path = std::filesystem::path{expand_tilde(config.base_dir_path)};
-    try {
-        std::filesystem::current_path(base_path);
-    }
-    catch (std::filesystem::filesystem_error& error) {
-        std::cerr << "filesystem error: " << error.what() << std::endl;
-        return 0;
+    if (!set_working_dir(config.base_dir_path)) {
+        return EXIT_FAILURE;
     }
 
     std::optional<std::string> file = fzf();
     if (!file.has_value()) {
-        return 0;
+        return EXIT_SUCCESS;
     }
 
     auto pdf_viewer = config.pdf_viewer.c_str();

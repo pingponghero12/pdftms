@@ -1,10 +1,12 @@
 #include "utils.hpp"
 
 #include <algorithm>
+#include <iostream>
 #include <memory>
 #include <array>
 #include <optional>
 #include <unistd.h>
+#include <filesystem>
 
 std::string expand_tilde(const std::string& path) {
     if (!path.empty() && path[0] == '~') {
@@ -45,5 +47,19 @@ std::optional<std::string> fzf() {
         return {};
     }
     return output;
+}
+
+bool set_working_dir(const std::string& path) {
+    std::string expanded_path = expand_tilde(path);
+    const auto base_path = std::filesystem::path{expanded_path};
+    try {
+        std::filesystem::current_path(base_path);
+    }
+    catch (std::filesystem::filesystem_error& error) {
+        std::cerr << "Error changing directory: " << error.what() << std::endl;
+        return false;
+    }
+
+    return true;
 }
 
