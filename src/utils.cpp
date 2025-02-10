@@ -63,3 +63,16 @@ bool set_working_dir(const std::string& path) {
     return true;
 }
 
+bool create_dir(const std::string& path) {
+    try {
+        const auto dir_path = std::filesystem::path{expand_tilde(path)};
+
+        std::filesystem::create_directory(dir_path);
+    }
+    catch (std::filesystem::filesystem_error& error) {
+        std::cerr << "Error creating dir: " << error.what() << std::endl;
+        return false;
+    }
+    return true;
+}
+

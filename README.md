@@ -21,7 +21,7 @@ nix-env -i -f default.nix
 nix-env -e pdftms
 ```
 
-You can ofcourse still just `nix-shell` and do the manual cmake build:
+You can ofcourse still just `nix-shell` and do the manual cmake build. This will also generate `compile_commands.json` for clangd LSP.
 ```
 mkdir -p build
 cd build 
