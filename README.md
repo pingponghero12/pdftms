@@ -6,7 +6,7 @@ Program is set up to be easily build and installed using nix package manager.
 
 Build and run for development:
 ```bash
-# Cd into root
+# Ensure that ./build does not exist `rm -rf build`
 nix-build
 
 # Run
