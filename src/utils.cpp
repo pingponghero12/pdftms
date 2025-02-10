@@ -49,6 +49,29 @@ std::optional<std::string> fzf() {
     return output;
 }
 
+std::optional<std::string> fzf_dir() {
+    std::array<char, 256> buffer;
+    std::string output;
+
+    // Custom deleter to avoid attribute ignore warnings
+    auto close_file = [](FILE* file) {
+        if (file) pclose(file);
+    };
+    std::unique_ptr<FILE, decltype(close_file)> pipe(popen("find . -type d | fzf", "r"), close_file);
+
+    if(!pipe) {
+        throw std::runtime_error("popen() failed");
+    }
+    while (fgets(buffer.data(), static_cast<int>(buffer.size()), pipe.get()) != nullptr) {
+        output += buffer.data();
+    }
+
+    if (output == "") {
+        return {};
+    }
+    return output;
+}
+
 bool set_working_dir(const std::string& path) {
     std::string expanded_path = expand_tilde(path);
     const auto base_path = std::filesystem::path{expanded_path};
@@ -76,3 +99,13 @@ bool create_dir(const std::string& path) {
     return true;
 }
 
+bool move_file(const std::string& src, const std::string& dest) {
+    try {
+        std::filesystem::rename(src, dest);
+    }
+    catch (std::filesystem::filesystem_error &e) {
+        std::cerr << "Error moving file: " << e.what() << std::endl;
+        return false;
+    }
+    return true;
+}

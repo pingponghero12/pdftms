@@ -1,4 +1,6 @@
 #include "config.hpp"
+#include "utils.hpp"
+
 #include <fstream>
 
 namespace YAML {
@@ -23,7 +25,7 @@ namespace YAML {
 void create_config(const Config& config) {
     YAML::Node node = YAML::convert<Config>::encode(config);
 
-    std::ofstream fout("config.yaml");
+    std::ofstream fout(expand_tilde("~/.config/pdftms.yaml"));
     fout << node;
 }
 

@@ -10,7 +10,8 @@ using CommandFunction = std::function<int(const std::vector<std::string>&)>;
 
 int main(int argc, char* argv[]) {
     std::unordered_map<std::string, CommandFunction> commands = {
-        {"create", create}
+        {"create", create},
+        {"mv", mv}
     };
 
     if (argc == 1) {
