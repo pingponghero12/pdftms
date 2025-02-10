@@ -6,7 +6,7 @@ Program is set up to be easily build and installed using nix package manager.
 
 Build and run for development:
 ```bash
-# Cd into root
+# Ensure that ./build does not exist `rm -rf build`
 nix-build
 
 # Run
@@ -21,7 +21,7 @@ nix-env -i -f default.nix
 nix-env -e pdftms
 ```
 
-You can ofcourse still just `nix-shell` and do the manual cmake build:
+You can ofcourse still just `nix-shell` and do the manual cmake build. This will also generate `compile_commands.json` for clangd LSP.
 ```
 mkdir -p build
 cd build 
