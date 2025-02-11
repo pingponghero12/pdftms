@@ -62,10 +62,10 @@ int mv(const std::vector<std::string>& args) {
     const std::string file_input = args.at(1);
 
     fs::path local_path = fs::current_path();
-    std::filesystem::path src_path(file_input);
+    fs::path src_path(file_input);
     src_path = local_path / src_path;
 
-    if (!std::filesystem::exists(src_path)) {
+    if (!fs::exists(src_path)) {
         std::cerr << "Source file does not exist: " << src_path << std::endl;
         return EXIT_FAILURE;
     }
@@ -108,7 +108,6 @@ int mv(const std::vector<std::string>& args) {
         return EXIT_FAILURE;
     }
 
-    std::cout << "File moved successfully to " << dest_path << std::endl;
     return EXIT_SUCCESS;
 }
 
