@@ -13,8 +13,8 @@ int main(int argc, char* argv[]) {
         {"create", create},
         {"mv", mv},
         {"add", add},
-        {"mkdir", mkdir}
-
+        {"mkdir", mkdir},
+        {"rename", rename_cmd}
     };
 
     if (argc == 1) {
