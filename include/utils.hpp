@@ -18,3 +18,4 @@ bool set_working_dir(const std::string& path);
 bool create_dir(const std::string& path);
 
 bool move_file(const std::string& src, const std::string& dest);
+bool copy_file(const std::string& src, const std::string& dest);
