@@ -109,3 +109,14 @@ bool move_file(const std::string& src, const std::string& dest) {
     }
     return true;
 }
+
+bool copy_file(const std::string& src, const std::string& dest) {
+    try {
+        std::filesystem::copy(src, dest);
+    }
+    catch (std::filesystem::filesystem_error &e) {
+        std::cerr << "Error copying file: " << e.what() << std::endl;
+        return false;
+    }
+    return true;
+}
