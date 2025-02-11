@@ -170,5 +170,53 @@ int add(const std::vector<std::string>& args) {
     return EXIT_SUCCESS;
 }
 
-int mkdir(const std::vector<std::string>& args);
+int mkdir(const std::vector<std::string>& args) {
+    std::string config_path = expand_tilde(CONFIG_PATH);
+    Config config = read_config(config_path);
+
+    if (!set_working_dir(config.base_dir_path)) {
+        return EXIT_FAILURE;
+    }
+
+    auto dest = fzf_dir();
+    if (!dest.has_value()) {
+        std::cerr << "No destination chosen." << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    std::string dest_dir_str = rtrim(expand_tilde(dest.value()));
+    fs::path dest_dir(dest_dir_str);
+    if (!dest_dir.is_absolute()) {
+        dest_dir = fs::absolute(dest_dir);
+    }
+
+    try {
+        dest_dir = fs::canonical(dest_dir);
+    } catch (const fs::filesystem_error &e) {
+        std::cerr << "Error resolving destination directory: " << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    if (!fs::exists(dest_dir) || !fs::is_directory(dest_dir)) {
+        std::cerr << "Destination is not a valid directory: " << dest_dir << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    std::string new_dir_name;
+    std::cout << "Enter dir name: ";
+    std::cin >> new_dir_name;
+    fs::path new_dir(new_dir_name);
+
+    dest_dir = dest_dir / new_dir;
+
+    try {
+        fs::create_directory(dest_dir);
+    }
+    catch (fs::filesystem_error& e) {
+        std::cerr << "Error creating dir: " << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
+}
 

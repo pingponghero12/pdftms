@@ -12,7 +12,9 @@ int main(int argc, char* argv[]) {
     std::unordered_map<std::string, CommandFunction> commands = {
         {"create", create},
         {"mv", mv},
-        {"add", add}
+        {"add", add},
+        {"mkdir", mkdir}
+
     };
 
     if (argc == 1) {
