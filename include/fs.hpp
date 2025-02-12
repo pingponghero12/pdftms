@@ -23,4 +23,6 @@ std::optional<std::filesystem::path> get_dest_path(const std::string& dest_dir_s
 
 std::optional<std::filesystem::path> get_src_path(const std::string& file_input);
 
-std::optional<std::tuple<std::string, std::string>> insert_base(const std::string& file_input);
+std::optional<std::tuple<std::string, std::string>> new_insert_helper(const std::string& file_input);
+
+std::optional<std::filesystem::path> get_dest(const std::string& dest_str,const bool& is_dir);
