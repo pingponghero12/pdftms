@@ -9,6 +9,17 @@
 
 namespace fs = std::filesystem;
 
+void show_help() {
+    std::cout << "Usage: pdftms <command> [arguments]\n";
+    std::cout << "Commands:\n";
+    std::cout << "  create <path> <pdf_reader> : Create a PDF vault at the specified path with the given PDF viewer.\n";
+    std::cout << "  mv <file>                 : Move the specified PDF file to the PDF vault.\n";
+    std::cout << "  add <file>                : Copy the specified PDF file to the PDF vault.\n";
+    std::cout << "  mkdir                     : Create a directory inside the PDF vault.\n";
+    std::cout << "  rename                    : Rename a file inside the PDF vault.\n";
+    std::cout << "  help                      : Show this help message.\n";
+}
+
 int view_default(void) {
     if (!enter_vault()) {
         return EXIT_FAILURE;

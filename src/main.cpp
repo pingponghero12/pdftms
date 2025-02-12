@@ -14,7 +14,11 @@ int main(int argc, char* argv[]) {
         {"mv", mv},
         {"add", add},
         {"mkdir", mkdir},
-        {"rename", rename_cmd}
+        {"rename", rename_cmd},
+        // Help
+        {"help", [](const std::vector<std::string>&) -> int { show_help(); return EXIT_SUCCESS;}},
+        {"--help", [](const std::vector<std::string>&) -> int { show_help(); return EXIT_SUCCESS;}},
+        {"-h", [](const std::vector<std::string>&) -> int { show_help(); return EXIT_SUCCESS;}}
     };
 
     if (argc == 1) {
@@ -32,7 +36,9 @@ int main(int argc, char* argv[]) {
         return commands[command](args);
     }
     else {
-        std::cerr << "Command not found" << std::endl;
+        std::cerr << "Command not found\n"
+            << "For help type --help"
+            << std::endl;
         return EXIT_FAILURE;
     }
 }
