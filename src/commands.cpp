@@ -57,12 +57,8 @@ int mv(const std::vector<std::string>& args) {
     }
     const std::string file_input = args.at(1);
 
-    fs::path local_path = fs::current_path();
-    fs::path src_path(file_input);
-    src_path = local_path / src_path;
-
-    if (!fs::exists(src_path)) {
-        std::cerr << "Source file does not exist: " << src_path << std::endl;
+    std::optional<fs::path> src_path = get_src_path(file_input);
+    if (!src_path.has_value()) {
         return EXIT_FAILURE;
     }
 
@@ -87,7 +83,7 @@ int mv(const std::vector<std::string>& args) {
         return EXIT_FAILURE;
     }
 
-    if (!move_file(src_path.string(), dest_path.value().string())) {
+    if (!move_file(src_path.value().string(), dest_path.value().string())) {
         std::cerr << "Failed to move file to: " << dest_path.value().string() << std::endl;
         return EXIT_FAILURE;
     }
@@ -97,58 +93,17 @@ int mv(const std::vector<std::string>& args) {
 
 int add(const std::vector<std::string>& args) {
     if (args.size() != 2) {
-        std::cerr << "Usage: pdftms mv <file>\n"
-            << "<path> needs to point to valid PDF file"
+        std::cerr << "Usage: pdftms add <file>\n"
+            << "<path> needs to point to valid PDF file\n"
+            << "Add does not move file, but copies it to pdf vault."
             << std::endl;
         return EXIT_FAILURE;
     }
     const std::string file_input = args.at(1);
 
-    fs::path local_path = fs::current_path();
-    fs::path src_path(file_input);
-    src_path = local_path / src_path;
-
-    if (!fs::exists(src_path)) {
-        std::cerr << "Source file does not exist: " << src_path << std::endl;
-        return EXIT_FAILURE;
-    }
-
-    if (!enter_vault()) {
-        return EXIT_FAILURE;
-    }
-
-    auto dest = fzf_dir();
-    if (!dest.has_value()) {
-        std::cerr << "No destination chosen." << std::endl;
-        return EXIT_FAILURE;
-    }
-
-    std::string dest_dir_str = rtrim(expand_tilde(dest.value()));
-    fs::path dest_dir(dest_dir_str);
-    if (!dest_dir.is_absolute()) {
-        dest_dir = fs::absolute(dest_dir);
-    }
-
-    try {
-        dest_dir = fs::canonical(dest_dir);
-    } catch (const fs::filesystem_error &e) {
-        std::cerr << "Error resolving destination directory: " << e.what() << std::endl;
-        return EXIT_FAILURE;
-    }
-
-    if (!fs::exists(dest_dir) || !fs::is_directory(dest_dir)) {
-        std::cerr << "Destination is not a valid directory: " << dest_dir << std::endl;
-        return EXIT_FAILURE;
-    }
-
-    std::string pdf_name;
-
-    std::cout << "New PDF name(<name>.pdf): ";
-    std::cin >> pdf_name;
-
-    fs::path pdf_path(pdf_name);
-
-    fs::path dest_path = dest_dir / pdf_path.filename();
+    auto paths = insert_base(file_input);
+    std::string src_path = get<0>(paths);
+    std::string dest_path = get<1>(paths);
 
     if (!copy_file(src_path.string(), dest_path.string())) {
         std::cerr << "Failed to move file to: " << dest_path << std::endl;
@@ -159,6 +114,12 @@ int add(const std::vector<std::string>& args) {
 }
 
 int mkdir(const std::vector<std::string>& args) {
+    if (args.size() != 1) {
+        std::cerr << "Usage: pdftms mkdir"
+            << std::endl;
+        return EXIT_FAILURE;
+    }
+
     if (!enter_vault()) {
         return EXIT_FAILURE;
     }

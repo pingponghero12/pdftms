@@ -20,3 +20,7 @@ bool enter_vault(void);
 std::string get_viewer(void);
 
 std::optional<std::filesystem::path> get_dest_path(const std::string& dest_dir_str, const std::string& pdf_name);
+
+std::optional<std::filesystem::path> get_src_path(const std::string& file_input);
+
+std::optional<std::tuple<std::string, std::string>> insert_base(const std::string& file_input);
