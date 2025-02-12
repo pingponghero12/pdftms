@@ -10,11 +10,7 @@
 namespace fs = std::filesystem;
 
 int view_default(void) {
-    // Filesystem and YAML need expanded tilde
-    std::string config_path = expand_tilde(CONFIG_PATH);
-    Config config = read_config(config_path);
-
-    if (!set_working_dir(config.base_dir_path)) {
+    if (!enter_vault()) {
         return EXIT_FAILURE;
     }
 
@@ -23,8 +19,8 @@ int view_default(void) {
         return EXIT_SUCCESS;
     }
 
-    auto pdf_viewer = config.pdf_viewer.c_str();
-    execlp(pdf_viewer, pdf_viewer, rtrim(file.value()).c_str(), NULL);
+    std::string pdf_viewer = get_viewer();
+    execlp(pdf_viewer.c_str(), pdf_viewer.c_str(), rtrim(file.value()).c_str(), NULL);
 
     std::cerr << "Failed to exec " << pdf_viewer << std::endl;
     return EXIT_FAILURE;
@@ -47,7 +43,6 @@ int create(const std::vector<std::string>& args) {
     }
 
     Config config = {dir_path, pdf_viewer};
-
     create_config(config);
 
     return EXIT_SUCCESS;
@@ -71,10 +66,7 @@ int mv(const std::vector<std::string>& args) {
         return EXIT_FAILURE;
     }
 
-    std::string config_path = expand_tilde(CONFIG_PATH);
-    Config config = read_config(config_path);
-
-    if (!set_working_dir(config.base_dir_path)) {
+    if (!enter_vault()) {
         return EXIT_FAILURE;
     }
 
@@ -85,34 +77,18 @@ int mv(const std::vector<std::string>& args) {
     }
 
     std::string dest_dir_str = rtrim(expand_tilde(dest.value()));
-    fs::path dest_dir(dest_dir_str);
-    if (!dest_dir.is_absolute()) {
-        dest_dir = fs::absolute(dest_dir);
-    }
-
-    try {
-        dest_dir = fs::canonical(dest_dir);
-    } catch (const fs::filesystem_error &e) {
-        std::cerr << "Error resolving destination directory: " << e.what() << std::endl;
-        return EXIT_FAILURE;
-    }
-
-    if (!fs::exists(dest_dir) || !fs::is_directory(dest_dir)) {
-        std::cerr << "Destination is not a valid directory: " << dest_dir << std::endl;
-        return EXIT_FAILURE;
-    }
 
     std::string pdf_name;
-
     std::cout << "New PDF name(<name>.pdf): ";
     std::cin >> pdf_name;
 
-    fs::path pdf_path(pdf_name);
+    std::optional<fs::path> dest_path = get_dest_path(dest_dir_str, pdf_name);
+    if (!dest_path.has_value()) {
+        return EXIT_FAILURE;
+    }
 
-    fs::path dest_path = dest_dir / pdf_path.filename();
-
-    if (!move_file(src_path.string(), dest_path.string())) {
-        std::cerr << "Failed to move file to: " << dest_path << std::endl;
+    if (!move_file(src_path.string(), dest_path.value().string())) {
+        std::cerr << "Failed to move file to: " << dest_path.value().string() << std::endl;
         return EXIT_FAILURE;
     }
 
@@ -137,10 +113,7 @@ int add(const std::vector<std::string>& args) {
         return EXIT_FAILURE;
     }
 
-    std::string config_path = expand_tilde(CONFIG_PATH);
-    Config config = read_config(config_path);
-
-    if (!set_working_dir(config.base_dir_path)) {
+    if (!enter_vault()) {
         return EXIT_FAILURE;
     }
 
@@ -186,10 +159,7 @@ int add(const std::vector<std::string>& args) {
 }
 
 int mkdir(const std::vector<std::string>& args) {
-    std::string config_path = expand_tilde(CONFIG_PATH);
-    Config config = read_config(config_path);
-
-    if (!set_working_dir(config.base_dir_path)) {
+    if (!enter_vault()) {
         return EXIT_FAILURE;
     }
 
