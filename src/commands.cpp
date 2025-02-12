@@ -1,6 +1,7 @@
 #include "commands.hpp"
 #include "config.hpp"
 #include "utils.hpp"
+#include "fs.hpp"
 
 #include <iostream>
 #include <optional>
