@@ -1,6 +1,7 @@
 #include "commands.hpp"
 #include "config.hpp"
 #include "utils.hpp"
+#include "fs.hpp"
 
 #include <iostream>
 #include <optional>
@@ -8,12 +9,19 @@
 
 namespace fs = std::filesystem;
 
-int view_default(void) {
-    // Filesystem and YAML need expanded tilde
-    std::string config_path = expand_tilde(CONFIG_PATH);
-    Config config = read_config(config_path);
+void show_help() {
+    std::cout << "Usage: pdftms <command> [arguments]\n";
+    std::cout << "Commands:\n";
+    std::cout << "  create <path> <pdf_reader> : Create a PDF vault at the specified path with the given PDF viewer.\n";
+    std::cout << "  mv <file>                 : Move the specified PDF file to the PDF vault.\n";
+    std::cout << "  add <file>                : Copy the specified PDF file to the PDF vault.\n";
+    std::cout << "  mkdir                     : Create a directory inside the PDF vault.\n";
+    std::cout << "  rename                    : Rename a file inside the PDF vault.\n";
+    std::cout << "  help                      : Show this help message.\n";
+}
 
-    if (!set_working_dir(config.base_dir_path)) {
+int view_default(void) {
+    if (!enter_vault()) {
         return EXIT_FAILURE;
     }
 
@@ -22,9 +30,10 @@ int view_default(void) {
         return EXIT_SUCCESS;
     }
 
-    auto pdf_viewer = config.pdf_viewer.c_str();
-    execlp(pdf_viewer, pdf_viewer, rtrim(file.value()).c_str(), NULL);
+    const std::string pdf_viewer = get_viewer();
+    execlp(pdf_viewer.c_str(), pdf_viewer.c_str(), rtrim(file.value()).c_str(), NULL);
 
+    // execlp should overwrite this program
     std::cerr << "Failed to exec " << pdf_viewer << std::endl;
     return EXIT_FAILURE;
 }
@@ -45,8 +54,7 @@ int create(const std::vector<std::string>& args) {
         return EXIT_FAILURE;
     }
 
-    Config config = {dir_path, pdf_viewer};
-
+    const Config config = {dir_path, pdf_viewer};
     create_config(config);
 
     return EXIT_SUCCESS;
@@ -61,56 +69,14 @@ int mv(const std::vector<std::string>& args) {
     }
     const std::string file_input = args.at(1);
 
-    fs::path local_path = fs::current_path();
-    fs::path src_path(file_input);
-    src_path = local_path / src_path;
-
-    if (!fs::exists(src_path)) {
-        std::cerr << "Source file does not exist: " << src_path << std::endl;
+    const auto paths = new_insert_helper(file_input);
+    if (!paths.has_value()) {
         return EXIT_FAILURE;
     }
+    const std::string src_path = get<0>(paths.value());
+    const std::string dest_path = get<1>(paths.value());
 
-    std::string config_path = expand_tilde(CONFIG_PATH);
-    Config config = read_config(config_path);
-
-    if (!set_working_dir(config.base_dir_path)) {
-        return EXIT_FAILURE;
-    }
-
-    auto dest = fzf_dir();
-    if (!dest.has_value()) {
-        std::cerr << "No destination chosen." << std::endl;
-        return EXIT_FAILURE;
-    }
-
-    std::string dest_dir_str = rtrim(expand_tilde(dest.value()));
-    fs::path dest_dir(dest_dir_str);
-    if (!dest_dir.is_absolute()) {
-        dest_dir = fs::absolute(dest_dir);
-    }
-
-    try {
-        dest_dir = fs::canonical(dest_dir);
-    } catch (const fs::filesystem_error &e) {
-        std::cerr << "Error resolving destination directory: " << e.what() << std::endl;
-        return EXIT_FAILURE;
-    }
-
-    if (!fs::exists(dest_dir) || !fs::is_directory(dest_dir)) {
-        std::cerr << "Destination is not a valid directory: " << dest_dir << std::endl;
-        return EXIT_FAILURE;
-    }
-
-    std::string pdf_name;
-
-    std::cout << "New PDF name(<name>.pdf): ";
-    std::cin >> pdf_name;
-
-    fs::path pdf_path(pdf_name);
-
-    fs::path dest_path = dest_dir / pdf_path.filename();
-
-    if (!move_file(src_path.string(), dest_path.string())) {
+    if (!move_file(src_path, dest_path)) {
         std::cerr << "Failed to move file to: " << dest_path << std::endl;
         return EXIT_FAILURE;
     }
@@ -120,63 +86,22 @@ int mv(const std::vector<std::string>& args) {
 
 int add(const std::vector<std::string>& args) {
     if (args.size() != 2) {
-        std::cerr << "Usage: pdftms mv <file>\n"
-            << "<path> needs to point to valid PDF file"
+        std::cerr << "Usage: pdftms add <file>\n"
+            << "<path> needs to point to valid PDF file\n"
+            << "Add does not move file, but copies it to pdf vault."
             << std::endl;
         return EXIT_FAILURE;
     }
     const std::string file_input = args.at(1);
 
-    fs::path local_path = fs::current_path();
-    fs::path src_path(file_input);
-    src_path = local_path / src_path;
-
-    if (!fs::exists(src_path)) {
-        std::cerr << "Source file does not exist: " << src_path << std::endl;
+    const auto paths = new_insert_helper(file_input);
+    if (!paths.has_value()) {
         return EXIT_FAILURE;
     }
+    const std::string src_path = get<0>(paths.value());
+    const std::string dest_path = get<1>(paths.value());
 
-    std::string config_path = expand_tilde(CONFIG_PATH);
-    Config config = read_config(config_path);
-
-    if (!set_working_dir(config.base_dir_path)) {
-        return EXIT_FAILURE;
-    }
-
-    auto dest = fzf_dir();
-    if (!dest.has_value()) {
-        std::cerr << "No destination chosen." << std::endl;
-        return EXIT_FAILURE;
-    }
-
-    std::string dest_dir_str = rtrim(expand_tilde(dest.value()));
-    fs::path dest_dir(dest_dir_str);
-    if (!dest_dir.is_absolute()) {
-        dest_dir = fs::absolute(dest_dir);
-    }
-
-    try {
-        dest_dir = fs::canonical(dest_dir);
-    } catch (const fs::filesystem_error &e) {
-        std::cerr << "Error resolving destination directory: " << e.what() << std::endl;
-        return EXIT_FAILURE;
-    }
-
-    if (!fs::exists(dest_dir) || !fs::is_directory(dest_dir)) {
-        std::cerr << "Destination is not a valid directory: " << dest_dir << std::endl;
-        return EXIT_FAILURE;
-    }
-
-    std::string pdf_name;
-
-    std::cout << "New PDF name(<name>.pdf): ";
-    std::cin >> pdf_name;
-
-    fs::path pdf_path(pdf_name);
-
-    fs::path dest_path = dest_dir / pdf_path.filename();
-
-    if (!copy_file(src_path.string(), dest_path.string())) {
+    if (!copy_file(src_path, dest_path)) {
         std::cerr << "Failed to move file to: " << dest_path << std::endl;
         return EXIT_FAILURE;
     }
@@ -185,46 +110,38 @@ int add(const std::vector<std::string>& args) {
 }
 
 int mkdir(const std::vector<std::string>& args) {
-    std::string config_path = expand_tilde(CONFIG_PATH);
-    Config config = read_config(config_path);
-
-    if (!set_working_dir(config.base_dir_path)) {
+    if (args.size() != 1) {
+        std::cerr << "Usage: pdftms mkdir"
+            << std::endl;
         return EXIT_FAILURE;
     }
 
-    auto dest = fzf_dir();
+    if (!enter_vault()) {
+        return EXIT_FAILURE;
+    }
+
+    const auto dest = fzf_dir();
     if (!dest.has_value()) {
         std::cerr << "No destination chosen." << std::endl;
         return EXIT_FAILURE;
     }
 
-    std::string dest_dir_str = rtrim(expand_tilde(dest.value()));
-    fs::path dest_dir(dest_dir_str);
-    if (!dest_dir.is_absolute()) {
-        dest_dir = fs::absolute(dest_dir);
-    }
-
-    try {
-        dest_dir = fs::canonical(dest_dir);
-    } catch (const fs::filesystem_error &e) {
-        std::cerr << "Error resolving destination directory: " << e.what() << std::endl;
-        return EXIT_FAILURE;
-    }
-
-    if (!fs::exists(dest_dir) || !fs::is_directory(dest_dir)) {
-        std::cerr << "Destination is not a valid directory: " << dest_dir << std::endl;
+    const std::string dest_dir_str = rtrim(expand_tilde(dest.value()));
+    const bool is_dir = true;
+    auto dest_dir = get_dest(dest_dir_str, is_dir);
+    if (!dest_dir.has_value()) {
         return EXIT_FAILURE;
     }
 
     std::string new_dir_name;
     std::cout << "Enter dir name: ";
     std::cin >> new_dir_name;
-    fs::path new_dir(new_dir_name);
 
-    dest_dir = dest_dir / new_dir;
+    const fs::path new_dir(new_dir_name);
+    const fs::path out_dir = dest_dir.value() / new_dir;
 
     try {
-        fs::create_directory(dest_dir);
+        fs::create_directory(out_dir);
     }
     catch (fs::filesystem_error& e) {
         std::cerr << "Error creating dir: " << e.what() << std::endl;
@@ -241,11 +158,8 @@ int rename_cmd(const std::vector<std::string>& args) {
         return EXIT_FAILURE;
     }
 
-    std::string config_path = expand_tilde(CONFIG_PATH);
-    Config config = read_config(config_path);
-
-    if (!set_working_dir(config.base_dir_path)) {
-        return EXIT_FAILURE;
+    if (!enter_vault()) {
+        return {};
     }
 
     auto dest = fzf();
@@ -254,36 +168,26 @@ int rename_cmd(const std::vector<std::string>& args) {
         return EXIT_FAILURE;
     }
 
-    std::string dest_str = rtrim(expand_tilde(dest.value()));
-    fs::path dest_path(dest_str);
-    if (!dest_path.is_absolute()) {
-        dest_path = fs::absolute(dest_path);
-    }
+    const std::string dest_str = rtrim(expand_tilde(dest.value()));
 
-    try {
-        dest_path = fs::canonical(dest_path);
-    } catch (const fs::filesystem_error &e) {
-        std::cerr << "Error resolving destination directory: " << e.what() << std::endl;
-        return EXIT_FAILURE;
-    }
-
-    if (!fs::exists(dest_path)) {
-        std::cerr << "Destination does not exists: " << dest_path << std::endl;
+    const bool is_dir = false;
+    auto dest_path = get_dest(dest_str, is_dir);
+    if (!dest_path.has_value()) {
         return EXIT_FAILURE;
     }
 
     std::string pdf_name;
 
-    std::cout << "Old name: " << dest_path.filename().string() << std::endl;
+    std::cout << "Old name: " << dest_path.value().filename().string() << std::endl;
     std::cout << "New PDF name(<name>.pdf): ";
     std::cin >> pdf_name;
 
     fs::path pdf_path(pdf_name);
 
-    fs::path new_path = dest_path.parent_path() / pdf_path.filename();
+    fs::path new_path = dest_path.value().parent_path() / pdf_path.filename();
 
-    if (!move_file(dest_path.string(), new_path.string())) {
-        std::cerr << "Failed to rename file to: " << dest_path << std::endl;
+    if (!move_file(dest_path.value().string(), new_path.string())) {
+        std::cerr << "Failed to rename file to: " << dest_path.value().string() << std::endl;
         return EXIT_FAILURE;
     }
 
