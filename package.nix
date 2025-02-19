@@ -5,17 +5,17 @@
   cmake,
   gnumake,
   gcc,
-  yaml-cpp
+  yaml-cpp,
 }:
 
 stdenv.mkDerivation rec {
   pname = "pdftms";
-  version = "1.0.0";
+  version = "0-unstable-2025-02-14";
 
   src = fetchFromGitHub {
     owner = "pingponghero12";
     repo = "pdftms";
-    rev = "main";
+    rev = "c06fb29e9bd8d7cdd441c9d8e4ff05af0c0ed229";
     sha256 = "sha256-Stb1QHCa3AcVZaGoBBQM8fA6Fm7ZCHvb35rwNsjxFY8=";
   };
 
@@ -29,8 +29,7 @@ stdenv.mkDerivation rec {
   '';
 
   installPhase = ''
-    mkdir -p $out/bin
-    cp build/pdftms $out/bin/
+    install -Dm755 build/pdftms -t $out/bin
   '';
 
   meta = with lib; {
