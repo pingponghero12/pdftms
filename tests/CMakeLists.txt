@@ -8,6 +8,7 @@ find_package(GTest REQUIRED)
 add_executable(pdftms_tests
     test_utils.cpp
     test_config.cpp
+    test_fs.cpp
 )
 
 target_include_directories(pdftms_tests
