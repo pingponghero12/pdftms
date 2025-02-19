@@ -1,12 +1,10 @@
 #include "utils.hpp"
 
 #include <algorithm>
-#include <iostream>
 #include <memory>
 #include <array>
 #include <optional>
 #include <unistd.h>
-#include <filesystem>
 
 std::string expand_tilde(const std::string& path) {
     if (!path.empty() && path[0] == '~') {
