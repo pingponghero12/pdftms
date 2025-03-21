@@ -9,6 +9,7 @@ pkgs.stdenv.mkDerivation rec {
     pkgs.cmake
     pkgs.gnumake
     pkgs.gcc
+    pkgs.gtest
     pkgs.yaml-cpp
   ];
 

@@ -5,6 +5,7 @@
   cmake,
   gnumake,
   gcc,
+  gtest,
   yaml-cpp,
 }:
 
