@@ -81,4 +81,6 @@ This command copies `/path/to/file.pdf` to the PDF vault.
 ## To add
 1. Move files inside of vault
 2. Vault tree view
+3. In add or mkdir dont show .git
+4. Support `git status` and `git commit push` and best just `pdftms git <rest>`. Just so you dont have to cd into dir you feel me?
 
