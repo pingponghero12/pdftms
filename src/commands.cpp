@@ -31,7 +31,11 @@ int view_default(void) {
     }
 
     const std::string pdf_viewer = get_viewer();
-    execlp(pdf_viewer.c_str(), pdf_viewer.c_str(), rtrim(file.value()).c_str(), NULL);
+
+    std::string cmd = "nohup " + pdf_viewer + " '" + rtrim(file.value()) + "' >/dev/null 2>&1 &";
+
+    // Execute it through the shell
+    execlp("sh", "sh", "-c", cmd.c_str(), NULL);
 
     // execlp should overwrite this program
     std::cerr << "Failed to exec " << pdf_viewer << std::endl;
